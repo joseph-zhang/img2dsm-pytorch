@@ -33,10 +33,6 @@ def metrics_preprocess(pred, gt):
     # get mask array
     mask = gt > 1e-6
 
-    # scale matching
-    #scalor = np.median(gt[mask]) / np.median(pred[mask])
-    #pred[mask] *= scalor
-
     # avoid numerical problems
     pred[pred < 1e-6] = 1e-6
     gt[gt < 1e-6] = 1e-6
