@@ -64,3 +64,42 @@ def getTrainingData(opt, batch_size):
                                      shuffle=True, num_workers=0, pin_memory=False)
 
     return dataloader_training
+
+
+class depthDataset_test(Dataset):
+    """ Dataset class for satellite image """
+
+    def __init__(self, opt, mode, transform=None):
+        self.dfcloader = DFCloader(opt.dataset_dir, mode, 1024, 1024, 512, 512, 256)
+        self.dfcloader.get_pair_data()
+        self.transform = transform
+
+    def __getitem__(self, idx):
+        target_transform = transforms.ToTensor()
+        if self.transform:
+            image, depth = self.dfcloader.load_item(idx)
+            image, depth = setNanToZero(image, depth)
+            src_image = image.copy().astype(np.uint8)
+            image = self.transform(image.astype(np.uint8))
+            depth = target_transform(depth).float()
+
+        sample = {'image':image, 'depth':depth, 'src':src_image}
+        return sample
+
+    def __len__(self):
+        return len(self.dfcloader.top_data)
+
+
+def getTestingData(opt, batch_size=1):
+    transformed_training = depthDataset_test(opt,
+                                             "test_data",
+                                             transform=transforms.Compose([
+                                                 transforms.ToPILImage(),
+                                                 transforms.Resize(256),
+                                                 transforms.ToTensor(),
+                                             ]))
+
+    dataloader_testing = DataLoader(transformed_training, batch_size,
+                                     shuffle=False, num_workers=0, pin_memory=False)
+
+    return dataloader_testing
